@@ -1,5 +1,6 @@
 (defproject web-editor "0.1.0"
   :dependencies [
+    [doughamil/threeagent "1.0.1"]
     [org.clojure/clojurescript "1.11.60"]
     [reagent "1.1.1"]]
   :profiles {:dev {:dependencies [
