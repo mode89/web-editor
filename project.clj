@@ -2,6 +2,7 @@
   :dependencies [
     [doughamil/threeagent "1.0.1"]
     [org.clojure/clojurescript "1.11.60"]
+    [org.clojure/core.async "1.5.648"]
     [reagent "1.1.1"]]
   :profiles {:dev {:dependencies [
     [com.bhauman/figwheel-main "0.2.18"]]}}
