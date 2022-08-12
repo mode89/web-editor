@@ -1,6 +1,8 @@
 (ns web-editor.frp
   (:require [clojure.core.async :as async]
-            [reagent.core :as r]))
+            [reagent.core :as r])
+  (:refer-clojure :rename {apply core-apply
+                           reduce core-reduce}))
 
 (defrecord Publisher [chan pub -topic])
 
@@ -35,18 +37,18 @@
       (recur))
     a))
 
-(defn rapply
+(defn apply
   "Returns an atom that at any moment holds the result of application
   of `f` to the values of provided atoms `as`"
   [f & as]
-  (let [app #(apply f (map deref as))
+  (let [app #(core-apply f (map deref as))
         res (r/atom (app))
         k (gensym)]
     (doseq [a as]
       (add-watch a k #(reset! res (app))))
     res))
 
-(defn creduce
+(defn reduce
   "Returns an atom that accumulates values produced by the channel `ch`"
   [f init ch]
   (let [a (r/atom nil)]

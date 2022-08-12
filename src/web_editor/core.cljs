@@ -13,9 +13,9 @@
 
 (defonce mouse-movement (frp/publisher))
 
-(defonce camera-rotation (frp/creduce #(camera-rotation-update %1 %2)
-                                      {:pitch 0 :yaw 0}
-                                      (frp/subscribe mouse-movement)))
+(defonce camera-rotation (frp/reduce #(camera-rotation-update %1 %2)
+                                     {:pitch 0 :yaw 0}
+                                     (frp/subscribe mouse-movement)))
 
 (defn camera-rotation-update [rotation event]
   (if (bit-test (.-buttons event) 2)
@@ -36,8 +36,8 @@
       [:perspective-camera {:fov 60.0
                             :near 1.0
                             :far 100.0
-                            :aspect @(frp/rapply #(/ (:width %) (:height %))
-                                                 viewport)
+                            :aspect @(frp/apply #(/ (:width %) (:height %))
+                                                viewport)
                             :position [0 0 10]}]]])
 
 (defn root []
