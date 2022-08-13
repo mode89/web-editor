@@ -53,13 +53,26 @@
                                                 viewport)
                             :position [0 0 @camera-distance]}]]])
 
+(defn axes-helper []
+  [:object
+    [:instance {:object (three/ArrowHelper.
+                          (three/Vector3.) (three/Vector3.) 2 0xFF0000)
+                :rotation [0 0 (/ math/PI -2)]}]
+    [:instance {:object (three/ArrowHelper.
+                          (three/Vector3.) (three/Vector3.) 2 0x00FF00)
+                :rotation [0 0 0]}]
+    [:instance {:object (three/ArrowHelper.
+                          (three/Vector3.) (three/Vector3.) 2 0x0000FF)
+                :rotation [(/ math/PI 2) 0 0]}]])
+
 (defn root []
   [:object
     [camera]
+    [:instance {:object (three/GridHelper.)}]
+    [axes-helper]
     [:directional-light {:intensity 1.0
                          :position [5 2.5 2]}]
     [:ambient-light {:intensity 0.5}]
-    [:instance {:object (three/GridHelper.)}]
     [:box]])
 
 (defn init! []
