@@ -22,9 +22,11 @@
   ([pub x] (async/put! (:chan pub) x)))
 
 (defn subscribe
-  "Returns a channel that subscribes to the `Publisher`'s channel"
-  [pub]
-  (let [res (async/chan)]
+  "Returns a channel that subscribes to the `Publisher`'s channel.
+  Optionally, pass transducers `xform` that are going to transform
+  the resulting channel."
+  [pub & xform]
+  (let [res (async/chan 1 (core-apply comp xform))]
     (async/sub (:pub pub) (:-topic pub) res)
     res))
 
