@@ -56,7 +56,9 @@
   [:object
     [camera]
     [th/grid-helper]
-    [th/axes-helper :orig [0 0 0] :length 2 :width 3]
+    [th/axes-helper :orig [0 0 0]
+                    :length (* 0.2 @camera-distance)
+                    :width 3]
     [:directional-light {:intensity 1.0
                          :position [5 2.5 2]}]
     [:ambient-light {:intensity 0.5}]
