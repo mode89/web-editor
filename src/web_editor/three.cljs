@@ -4,11 +4,9 @@
             [threeagent.entity :refer [IEntityType]]
             ["three" :as three]))
 
-(defn vec3 [& args]
-  (let [arg0 (nth args 0)]
-    (if (coll? arg0)
-      (apply three/Vector3. arg0)
-      (three/Vector3 arg0 (nth args 1) (nth args 2)))))
+(defn vec3
+  ([coll] (three/Vector3. (nth coll 0) (nth coll 1) (nth coll 2)))
+  ([x y z] (three/Vector3. x y z)))
 
 (defn grid-helper []
   [:instance {:object (three/GridHelper.)}])
