@@ -7,6 +7,13 @@
   ([[x y z]] (new three/Vector3 x y z))
   ([x y z] (new three/Vector3 x y z)))
 
+(defn color
+  ([x] (if (coll? x)
+         (let [[r g b] x]
+           (new three/Color r g b))
+         (new three/Color x)))
+  ([r g b] (new three/Color r g b)))
+
 (defn grid-helper []
   [:instance {:object (new three/GridHelper)}])
 
@@ -47,5 +54,4 @@
                         (merge config
                                {:entity-types
                                  {:line (->LineEntity nil nil)}}))]
-    (.setClearColor (:threejs-renderer ctx)
-                    (apply #(new three/Color. %1 %2 %3) clear-color))))
+    (.setClearColor (:threejs-renderer ctx) (color clear-color))))
