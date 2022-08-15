@@ -1,6 +1,5 @@
 (ns web-editor.three
-  (:require [clojure.math :as math]
-            [threeagent.core :as tha]
+  (:require [threeagent.core :as tha]
             [threeagent.entity :refer [IEntityType]]
             ["three" :as three]))
 
