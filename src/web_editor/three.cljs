@@ -8,7 +8,7 @@
   ([x y z] (new three/Vector3 x y z)))
 
 (defn grid-helper []
-  [:instance {:object (three/GridHelper.)}])
+  [:instance {:object (new three/GridHelper)}])
 
 (defn axes-helper [& {:keys [orig length width] :or {length 1 width 1}}]
   [:object
@@ -27,14 +27,14 @@
   IEntityType
   (create [_ _ {:keys [points width color] :or {width 1 color 0xFF00FF}}]
     (set! geometry
-          (-> (three/BufferGeometry.)
+          (-> (new three/BufferGeometry)
               (.setFromPoints (->> points
                                    (map vec3)
                                    (#(apply array %))))))
-    (set! material (three/LineBasicMaterial.
+    (set! material (new three/LineBasicMaterial
                      (js-obj "color" color
                              "linewidth" width)))
-    (three/Line. geometry material))
+    (new three/Line geometry material))
   (destroy! [_ _ _ _]
     (.dispose geometry)
     (.dispose material)))
@@ -44,4 +44,4 @@
                         canvas
                         {:entity-types {:line (->LineEntity nil nil)}})]
     (.setClearColor (:threejs-renderer ctx)
-                    (apply #(three/Color. %1 %2 %3) clear-color))))
+                    (apply #(new three/Color. %1 %2 %3) clear-color))))
