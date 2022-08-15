@@ -80,8 +80,6 @@
   (let [canvas-el (js/document.getElementById "canvas")]
     (reset! viewport {:width (.-clientWidth canvas-el)
                       :height (.-clientHeight canvas-el)})
-    (let [th-ctx (th/render root canvas-el)]
-      (.setClearColor (:threejs-renderer th-ctx)
-                      (three/Color. 0.3 0.3 0.3)))))
+    (th/render root canvas-el {:clear-color [0.3 0.3 0.3]})))
 
 (init!)
