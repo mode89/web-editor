@@ -20,7 +20,8 @@
 
 (defonce camera-rotation
   (frp/reduce #(camera-rotation-update %1 %2)
-              {:pitch 0 :yaw 0}
+              {:pitch (/ math/PI -4)
+               :yaw (/ math/PI 4)}
               (frp/subscribe mouse-movement-events
                              (filter #(bit-test (.-buttons %) 2))
                              (filter #(not (.-shiftKey %))))))
