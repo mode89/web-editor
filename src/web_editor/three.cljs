@@ -39,9 +39,13 @@
     (.dispose geometry)
     (.dispose material)))
 
-(defn render [root canvas {:keys [clear-color] :or {clear-color [0 0 0]}}]
+(defn render [root canvas {:keys [clear-color]
+                           :or {clear-color [0 0 0]}
+                           :as config}]
   (let [ctx (tha/render root
                         canvas
-                        {:entity-types {:line (->LineEntity nil nil)}})]
+                        (merge config
+                               {:entity-types
+                                 {:line (->LineEntity nil nil)}}))]
     (.setClearColor (:threejs-renderer ctx)
                     (apply #(new three/Color. %1 %2 %3) clear-color))))
