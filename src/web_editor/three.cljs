@@ -11,17 +11,17 @@
 (defn grid-helper []
   [:instance {:object (three/GridHelper.)}])
 
-(defn axes-helper []
+(defn axes-helper [& {:keys [orig length width] :or {length 1 width 1}}]
   [:object
-    [:instance {:object (three/ArrowHelper.
-                          (three/Vector3.) (three/Vector3.) 2 0xFF0000)
-                :rotation [0 0 (/ math/PI -2)]}]
-    [:instance {:object (three/ArrowHelper.
-                          (three/Vector3.) (three/Vector3.) 2 0x00FF00)
-                :rotation [0 0 0]}]
-    [:instance {:object (three/ArrowHelper.
-                          (three/Vector3.) (three/Vector3.) 2 0x0000FF)
-                :rotation [(/ math/PI 2) 0 0]}]])
+    [:line {:points [orig (map + orig [length 0 0])]
+            :width width
+            :color 0xFF0000}]
+    [:line {:points [orig (map + orig [0 length 0])]
+            :width width
+            :color 0x00FF00}]
+    [:line {:points [orig (map + orig [0 0 length])]
+            :width width
+            :color 0x0000FF}]])
 
 (deftype LineEntity [^:unsynchronized-mutable geometry
                      ^:unsynchronized-mutable material]
