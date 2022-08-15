@@ -7,31 +7,50 @@
 
 (def CAMERA-ROTATION-SPEED 0.01)
 (def CAMERA-ZOOM-SPEED 0.003)
+(def CAMERA-SHIFT-SPEED 0.001)
 
 (declare camera-rotation-update)
 (declare camera-distance-update)
+(declare camera-position-update)
 
 (defonce mouse-movement-events (frp/publisher))
 (defonce mouse-wheel-events (frp/publisher))
 
 (defonce viewport (r/atom {:width 0 :height 0}))
 
-(defonce camera-rotation (frp/reduce #(camera-rotation-update %1 %2)
-                                     {:pitch 0 :yaw 0}
-                                     (frp/subscribe mouse-movement-events)))
+(defonce camera-rotation
+  (frp/reduce #(camera-rotation-update %1 %2)
+              {:pitch 0 :yaw 0}
+              (frp/subscribe mouse-movement-events
+                             (filter #(bit-test (.-buttons %) 2))
+                             (filter #(not (.-shiftKey %))))))
 
 (defonce camera-distance (frp/reduce #(camera-distance-update %1 %2)
                                      10.0
                                      (frp/subscribe mouse-wheel-events)))
 
+(defonce camera-position
+  (frp/reduce #(camera-position-update
+                 %1 @camera-rotation @camera-distance %2)
+              [0 0 0]
+              (frp/subscribe mouse-movement-events
+                             (filter #(bit-test (.-buttons %) 2))
+                             (filter #(.-shiftKey %)))))
+
 (defn camera-rotation-update [rotation event]
-  (if (bit-test (.-buttons event) 2)
-    (let [dx (->> event .-movementX (* CAMERA-ROTATION-SPEED))
-          dy (->> event .-movementY (* CAMERA-ROTATION-SPEED))]
-      (-> rotation
-          (update :pitch #(- % dy))
-          (update :yaw #(- % dx))))
-    rotation))
+  (let [dx (->> event .-movementX (* CAMERA-ROTATION-SPEED))
+        dy (->> event .-movementY (* CAMERA-ROTATION-SPEED))]
+    (-> rotation
+        (update :pitch #(- % dy))
+        (update :yaw #(- % dx)))))
+
+(defn camera-position-update [position rotation distance event]
+  (let [dx (-> event .-movementX (* CAMERA-SHIFT-SPEED distance))
+        dy (-> event .-movementY (* CAMERA-SHIFT-SPEED distance))
+        delta (-> (th/vec3 (- dx) dy 0)
+                  (.applyAxisAngle (th/vec3 1 0 0) (:pitch rotation))
+                  (.applyAxisAngle (th/vec3 0 1 0) (:yaw rotation)))]
+    (map #(+ %1 %2) position delta)))
 
 (defn camera-distance-update [distance event]
   (let [d (.-deltaY event)]
@@ -43,7 +62,8 @@
             :on-wheel (frp/publish mouse-wheel-events)}])
 
 (defn camera []
-  [:object {:rotation [0 (:yaw @camera-rotation) 0]}
+  [:object {:position @camera-position
+            :rotation [0 (:yaw @camera-rotation) 0]}
     [:object {:rotation [(:pitch @camera-rotation) 0 0]}
       [:perspective-camera {:fov 60.0
                             :near 1.0
