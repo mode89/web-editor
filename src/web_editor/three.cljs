@@ -4,8 +4,8 @@
             ["three" :as three]))
 
 (defn vec3
-  ([coll] (three/Vector3. (nth coll 0) (nth coll 1) (nth coll 2)))
-  ([x y z] (three/Vector3. x y z)))
+  ([[x y z]] (new three/Vector3 x y z))
+  ([x y z] (new three/Vector3 x y z)))
 
 (defn grid-helper []
   [:instance {:object (three/GridHelper.)}])
