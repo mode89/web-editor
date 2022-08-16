@@ -80,7 +80,7 @@
               (.filter @objects-array #(not= id (.-id %))))))
   (tick [_ _]))
 
-(defn render [root canvas {:keys [clear-color pick-points]
+(defn render [root canvas {:keys [clear-color pick-points viewport-size]
                            :or {clear-color [0 0 0]}
                            :as config}]
   (let [ctx (tha/render
@@ -96,5 +96,10 @@
                                           (atom {})
                                           (atom (array))
                                           (atom nil)
-                                          (atom nil))}))}))]
-    (.setClearColor (:threejs-renderer ctx) (color clear-color))))
+                                          (atom nil))}))}))
+        renderer (:threejs-renderer ctx)]
+    (.setClearColor renderer (color clear-color))
+    (add-watch viewport-size
+               :resize-renderer
+               #(.setSize renderer (:width %4) (:height %4)))
+    ctx))

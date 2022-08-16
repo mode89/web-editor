@@ -17,7 +17,8 @@
 (defonce mouse-wheel-events (frp/publisher))
 (defonce mouse-click-events (frp/publisher))
 
-(defonce viewport (r/atom {:width 0 :height 0}))
+(defonce canvas-size (r/atom nil))
+(defonce viewport canvas-size)
 
 (defonce camera-rotation
   (frp/reduce #(camera-rotation-update %1 %2)
@@ -62,11 +63,24 @@
   [(- (* 2 (/ x width)) 1)
    (+ (* -2 (/ y height)) 1)])
 
+(defn size-sensor [size component]
+  (r/with-let [this (r/current-component)
+               update-size #(reset! size
+                                    (let [el (rdom/dom-node this)]
+                                      {:width (.-clientWidth el)
+                                       :height (.-clientHeight el)}))
+               _ (js/setTimeout update-size) ; Trigger initial size update
+               _ (js/window.addEventListener "resize" update-size)]
+    [:div {:style {:width "100%" :height "100%"}} component]
+    (finally (js/window.removeEventListener "resize" update-size))))
+
 (defn canvas []
-  [:canvas {:id "canvas"
-            :on-mouse-move (frp/publish mouse-movement-events)
-            :on-wheel (frp/publish mouse-wheel-events)
-            :on-click (frp/publish mouse-click-events)}])
+  [size-sensor canvas-size
+    [:canvas {:id "canvas"
+              :style @canvas-size
+              :on-mouse-move (frp/publish mouse-movement-events)
+              :on-wheel (frp/publish mouse-wheel-events)
+              :on-click (frp/publish mouse-click-events)}]])
 
 (defn camera []
   [:object {:position @camera-position
@@ -94,16 +108,14 @@
 
 (defn init! []
   (rdom/render [canvas] (js/document.getElementById "app"))
-  (let [canvas-el (js/document.getElementById "canvas")]
-    (reset! viewport {:width (.-clientWidth canvas-el)
-                      :height (.-clientHeight canvas-el)})
-    (th/render root
-               canvas-el
-               {:clear-color [0.3 0.3 0.3]
-                :pick-points
-                  (frp/subscribe
-                    mouse-click-events
-                    (map #(vector (.-clientX %) (.-clientY %)))
-                    (map #(normalized-device-coordinates % @viewport)))})))
+  (th/render root
+             (js/document.getElementById "canvas")
+             {:clear-color [0.3 0.3 0.3]
+              :viewport-size viewport
+              :pick-points
+                (frp/subscribe
+                  mouse-click-events
+                  (map #(vector (.-clientX %) (.-clientY %)))
+                  (map #(normalized-device-coordinates % @viewport)))}))
 
 (init!)
