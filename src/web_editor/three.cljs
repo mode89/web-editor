@@ -1,6 +1,8 @@
 (ns web-editor.three
-  (:require [threeagent.core :as tha]
+  (:require [clojure.core.async :as async]
+            [threeagent.core :as tha]
             [threeagent.entity :refer [IEntityType]]
+            [threeagent.system :refer [ISystem]]
             ["three" :as three]))
 
 (defn vec3
@@ -46,12 +48,53 @@
     (.dispose geometry)
     (.dispose material)))
 
-(defn render [root canvas {:keys [clear-color]
+(deftype PickObjectSystem [points entities objects-array camera loop-chan]
+  ISystem
+  (init [_ _]
+    (let [raycaster (new three/Raycaster)]
+      (reset! loop-chan
+        (async/go-loop []
+          (let [[x y] (async/<! points)]
+            (.setFromCamera raycaster
+                            (new three/Vector2 x y)
+                            @camera)
+            (doseq [iter (.intersectObjects raycaster @objects-array)]
+              (let [entity (get @entities (-> iter .-object .-id))
+                    callback (:config entity)]
+                (callback))))
+          (recur)))))
+  (destroy [_ _]
+    (async/close! @loop-chan))
+  (on-entity-added [_ _ entity-id obj config]
+    (if (= config :use-this-camera)
+      (reset! camera obj)
+      (do
+        (swap! entities assoc (.-id obj) {:object obj
+                                          :id entity-id
+                                          :config config})
+        (.push @objects-array obj))))
+  (on-entity-removed [_ _ _ obj _]
+    (let [id (.-id obj)]
+      (swap! entities dissoc id)
+      (reset! objects-array
+              (.filter @objects-array #(not= id (.-id %))))))
+  (tick [_ _]))
+
+(defn render [root canvas {:keys [clear-color pick-points]
                            :or {clear-color [0 0 0]}
                            :as config}]
-  (let [ctx (tha/render root
-                        canvas
-                        (merge config
-                               {:entity-types
-                                 {:line (->LineEntity nil nil)}}))]
+  (let [ctx (tha/render
+              root
+              canvas
+              (merge
+                config
+                {:entity-types {:line (->LineEntity nil nil)}
+                 :systems (merge
+                            (when (some? pick-points)
+                              {:on-pick (->PickObjectSystem
+                                          pick-points
+                                          (atom {})
+                                          (atom (array))
+                                          (atom nil)
+                                          (atom nil))}))}))]
     (.setClearColor (:threejs-renderer ctx) (color clear-color))))

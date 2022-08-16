@@ -15,6 +15,7 @@
 
 (defonce mouse-movement-events (frp/publisher))
 (defonce mouse-wheel-events (frp/publisher))
+(defonce mouse-click-events (frp/publisher))
 
 (defonce viewport (r/atom {:width 0 :height 0}))
 
@@ -57,10 +58,15 @@
   (let [d (.-deltaY event)]
     (* distance (math/exp (* d CAMERA-ZOOM-SPEED)))))
 
+(defn normalized-device-coordinates [[x y] {:keys [width height]}]
+  [(- (* 2 (/ x width)) 1)
+   (+ (* -2 (/ y height)) 1)])
+
 (defn canvas []
   [:canvas {:id "canvas"
             :on-mouse-move (frp/publish mouse-movement-events)
-            :on-wheel (frp/publish mouse-wheel-events)}])
+            :on-wheel (frp/publish mouse-wheel-events)
+            :on-click (frp/publish mouse-click-events)}])
 
 (defn camera []
   [:object {:position @camera-position
@@ -71,7 +77,8 @@
                             :far (+ @camera-distance 100)
                             :aspect @(frp/apply #(/ (:width %) (:height %))
                                                 viewport)
-                            :position [0 0 @camera-distance]}]]])
+                            :position [0 0 @camera-distance]
+                            :on-pick :use-this-camera}]]])
 
 (defn root []
   [:object
@@ -83,13 +90,20 @@
     [:directional-light {:intensity 1.0
                          :position [5 2.5 2]}]
     [:ambient-light {:intensity 0.5}]
-    [:box]])
+    [:box {:on-pick #(println "Picked box")}]])
 
 (defn init! []
   (rdom/render [canvas] (js/document.getElementById "app"))
   (let [canvas-el (js/document.getElementById "canvas")]
     (reset! viewport {:width (.-clientWidth canvas-el)
                       :height (.-clientHeight canvas-el)})
-    (th/render root canvas-el {:clear-color [0.3 0.3 0.3]})))
+    (th/render root
+               canvas-el
+               {:clear-color [0.3 0.3 0.3]
+                :pick-points
+                  (frp/subscribe
+                    mouse-click-events
+                    (map #(vector (.-clientX %) (.-clientY %)))
+                    (map #(normalized-device-coordinates % @viewport)))})))
 
 (init!)
