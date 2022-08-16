@@ -48,13 +48,23 @@
     (.dispose geometry)
     (.dispose material)))
 
-(deftype PickObjectSystem [points entities objects-array camera loop-chan]
+(defn normalized-device-coordinates [[x y] {:keys [width height]}]
+  [(- (* 2 (/ x width)) 1)
+   (+ (* -2 (/ y height)) 1)])
+
+(deftype PickObjectSystem [points
+                           viewport-size
+                           entities
+                           objects-array
+                           camera
+                           loop-chan]
   ISystem
   (init [_ _]
     (let [raycaster (new three/Raycaster)]
       (reset! loop-chan
         (async/go-loop []
-          (let [[x y] (async/<! points)]
+          (let [[x y] (normalized-device-coordinates
+                        (async/<! points) @viewport-size)]
             (.setFromCamera raycaster
                             (new three/Vector2 x y)
                             @camera)
@@ -93,6 +103,7 @@
                             (when (some? pick-points)
                               {:on-pick (->PickObjectSystem
                                           pick-points
+                                          viewport-size
                                           (atom {})
                                           (atom (array))
                                           (atom nil)

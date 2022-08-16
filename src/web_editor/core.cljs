@@ -18,7 +18,6 @@
 (defonce mouse-click-events (frp/publisher))
 
 (defonce canvas-size (r/atom nil))
-(defonce viewport canvas-size)
 
 (defonce camera-rotation
   (frp/reduce #(camera-rotation-update %1 %2)
@@ -59,10 +58,6 @@
   (let [d (.-deltaY event)]
     (* distance (math/exp (* d CAMERA-ZOOM-SPEED)))))
 
-(defn normalized-device-coordinates [[x y] {:keys [width height]}]
-  [(- (* 2 (/ x width)) 1)
-   (+ (* -2 (/ y height)) 1)])
-
 (defn size-sensor [size component]
   (r/with-let [this (r/current-component)
                update-size #(reset! size
@@ -90,7 +85,7 @@
                             :near 1.0
                             :far (+ @camera-distance 100)
                             :aspect @(frp/apply #(/ (:width %) (:height %))
-                                                viewport)
+                                                canvas-size)
                             :position [0 0 @camera-distance]
                             :on-pick :use-this-camera}]]])
 
@@ -111,11 +106,10 @@
   (th/render root
              (js/document.getElementById "canvas")
              {:clear-color [0.3 0.3 0.3]
-              :viewport-size viewport
+              :viewport-size canvas-size
               :pick-points
                 (frp/subscribe
                   mouse-click-events
-                  (map #(vector (.-clientX %) (.-clientY %)))
-                  (map #(normalized-device-coordinates % @viewport)))}))
+                  (map #(vector (.-clientX %) (.-clientY %))))}))
 
 (init!)
