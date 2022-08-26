@@ -94,7 +94,7 @@
                            :or {clear-color [0 0 0]}
                            :as config}]
   (let [ctx (tha/render
-              root
+              [ root]
               canvas
               (merge
                 config

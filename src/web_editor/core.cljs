@@ -1,9 +1,14 @@
 (ns web-editor.core
   (:require [clojure.math :as math]
+            [clojure.spec.alpha :as spec]
+            [clojure.spec.test.alpha :as spec-test]
             [reagent.core :as r]
             [reagent.dom :as rdom]
             [web-editor.frp :as frp]
-            [web-editor.three :as th]))
+            [web-editor.three :as th]
+            [web-editor.three2 :as th2]
+            [web-editor.utils :as u]
+            ["three" :as three]))
 
 (def CAMERA-ROTATION-SPEED 0.01)
 (def CAMERA-ZOOM-SPEED 0.003)
@@ -89,6 +94,14 @@
                             :position [0 0 @camera-distance]
                             :on-pick :use-this-camera}]]])
 
+(defn box [_]
+  (let [selected (r/atom false)]
+    (fn [init-pos]
+      [:box {:position init-pos
+             :material {:color (if @selected 0xFFFFAF 0xFFFFFF)}
+             :on-pick #(reset! selected true)
+             }])))
+
 (defn root []
   [:object
     [camera]
@@ -99,17 +112,63 @@
     [:directional-light {:intensity 1.0
                          :position [5 2.5 2]}]
     [:ambient-light {:intensity 0.5}]
-    [:box {:on-pick #(println "Picked box")}]])
+    (map #(vector [box [(* 3 %) 0 0]]) (range 10000))])
 
-(defn init! []
-  (rdom/render [canvas] (js/document.getElementById "app"))
-  (th/render root
-             (js/document.getElementById "canvas")
-             {:clear-color [0.3 0.3 0.3]
-              :viewport-size canvas-size
-              :pick-points
-                (frp/subscribe
-                  mouse-click-events
-                  (map #(vector (.-clientX %) (.-clientY %))))}))
+; (defn init! []
+;   (rdom/render [canvas] (js/document.getElementById "app"))
+;   (let [ctx (th/render root
+;              (js/document.getElementById "canvas")
+;              {:clear-color [0.3 0.3 0.3]
+;               :viewport-size canvas-size
+;               :pick-points
+;                 (frp/subscribe
+;                   mouse-click-events
+;                   (map #(vector (.-clientX %) (.-clientY %))))})]
+;     (when (not (identical? @thctx ctx))
+;       (println "Created new context")
+;       (reset! thctx ctx))))
+; 
+; (init!)
 
-(init!)
+; (defn init! []
+;   (rdom/render [canvas] (js/document.getElementById "app"))
+;   )
+; 
+; (init!)
+
+(defn box2 [conf & children]
+  [:mesh {:xform (u/select-keys* conf {:position [0 0 0]
+                                       :rotation [0 0 0]
+                                       :scale [1 1 1]})
+          :geometry [:box (u/select-keys* conf {:width 1
+                                                :height 1
+                                                :depth 1})]
+          :material (or (:material conf) {:color 0xFFFFFF})}
+   children])
+
+(defonce virtual-scene
+  (atom [[:perspective-camera {:xform {:position [0 0 7]
+                                       :rotation [0 0 0]
+                                       :scale [1 1 1]}
+                               :fov 75
+                               :aspect 1
+                               :near 1
+                               :far 1000}]
+         (box2 {:position [0 0 0]}
+               ; (box2 {:position [2 0 0]})
+               )]))
+
+; (js/setInterval #(.rotateZ box1 0.1) 100)
+(js/setTimeout #(swap! virtual-scene
+                       ; assoc-in
+                       ; [0 1 :geometry 1 :width]
+                       ; 2
+                       assoc-in [0 2] [(box2 {:position [2 0 0]})]
+                       ; assoc-in [0 2] nil
+                       )
+               1000)
+
+(th2/render virtual-scene (js/document.getElementById "canvas"))
+
+(spec/check-asserts true)
+(spec-test/instrument)
