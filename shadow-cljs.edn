@@ -1,0 +1,5 @@
+{:deps true
+ :dev-http {9500 "resources/public"}
+ :builds {:app {:target :browser
+                :output-dir "resources/public/js"
+                :modules {:main {:entries [web-editor.core]}}}}}

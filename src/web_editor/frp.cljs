@@ -1,8 +1,6 @@
 (ns web-editor.frp
   (:require [clojure.core.async :as async]
-            [reagent.core :as r])
-  (:refer-clojure :rename {apply core-apply
-                           reduce core-reduce}))
+            [reagent.core :as r]))
 
 (defrecord Publisher [chan pub -topic])
 
@@ -26,7 +24,7 @@
   Optionally, pass transducers `xform` that are going to transform
   the resulting channel."
   [pub & xform]
-  (let [res (async/chan 1 (core-apply comp xform))]
+  (let [res (async/chan 1 (apply comp xform))]
     (async/sub (:pub pub) (:-topic pub) res)
     res))
 
@@ -39,18 +37,18 @@
       (recur))
     a))
 
-(defn apply
+(defn lift
   "Returns an atom that at any moment holds the result of application
   of `f` to the values of provided atoms `as`"
   [f & as]
-  (let [app #(core-apply f (map deref as))
+  (let [app #(apply f (map deref as))
         res (r/atom (app))
         k (gensym)]
     (doseq [a as]
       (add-watch a k #(reset! res (app))))
     res))
 
-(defn reduce
+(defn accum
   "Returns an atom that accumulates values produced by the channel `ch`"
   [f init ch]
   (let [a (r/atom nil)]

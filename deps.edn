@@ -1,0 +1,8 @@
+{:paths ["src"]
+ :deps {org.clojure/clojurescript {:mvn/version "1.11.60"}
+        doughamil/threeagent {:mvn/version "1.0.1"}
+        reagent {:mvn/version "1.1.1"}}
+ :aliases
+  {:shadow
+    {:extra-deps {thheller/shadow-cljs {:mvn/version "2.20.1"}}
+     :main-opts ["--main" "shadow.cljs.devtools.cli"]}}}

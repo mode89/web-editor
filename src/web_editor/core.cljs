@@ -1,4 +1,4 @@
-(ns ^:figwheel-hooks web-editor.core
+(ns web-editor.core
   (:require [clojure.math :as math]
             [reagent.core :as r]
             [reagent.dom :as rdom]
@@ -20,24 +20,24 @@
 (defonce canvas-size (r/atom nil))
 
 (defonce camera-rotation
-  (frp/reduce #(camera-rotation-update %1 %2)
-              {:pitch (/ math/PI -4)
-               :yaw (/ math/PI 4)}
-              (frp/subscribe mouse-movement-events
-                             (filter #(bit-test (.-buttons %) 2))
-                             (filter #(not (.-shiftKey %))))))
+  (frp/accum #(camera-rotation-update %1 %2)
+             {:pitch (/ math/PI -4)
+              :yaw (/ math/PI 4)}
+             (frp/subscribe mouse-movement-events
+                            (filter #(bit-test (.-buttons %) 2))
+                            (filter #(not (.-shiftKey %))))))
 
-(defonce camera-distance (frp/reduce #(camera-distance-update %1 %2)
-                                     10.0
-                                     (frp/subscribe mouse-wheel-events)))
+(defonce camera-distance (frp/accum #(camera-distance-update %1 %2)
+                                    10.0
+                                    (frp/subscribe mouse-wheel-events)))
 
 (defonce camera-position
-  (frp/reduce #(camera-position-update
-                 %1 @camera-rotation @camera-distance %2)
-              [0 0 0]
-              (frp/subscribe mouse-movement-events
-                             (filter #(bit-test (.-buttons %) 2))
-                             (filter #(.-shiftKey %)))))
+  (frp/accum #(camera-position-update
+                %1 @camera-rotation @camera-distance %2)
+             [0 0 0]
+             (frp/subscribe mouse-movement-events
+                            (filter #(bit-test (.-buttons %) 2))
+                            (filter #(.-shiftKey %)))))
 
 (defn camera-rotation-update [rotation event]
   (let [dx (->> event .-movementX (* CAMERA-ROTATION-SPEED))
@@ -84,8 +84,8 @@
       [:perspective-camera {:fov 60.0
                             :near 1.0
                             :far (+ @camera-distance 100)
-                            :aspect @(frp/apply #(/ (:width %) (:height %))
-                                                canvas-size)
+                            :aspect @(frp/lift #(/ (:width %) (:height %))
+                                               canvas-size)
                             :position [0 0 @camera-distance]
                             :on-pick :use-this-camera}]]])
 
